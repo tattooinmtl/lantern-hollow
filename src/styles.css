@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #14120f;
+  --color-surface: #241f1a;
+  --color-surface-2: #312a23;
+  --color-fg: #f6efe4;
+  --color-muted: #a39888;
+  --color-accent: #e3923a;
+  --color-danger: #d4533c;
+  --color-border: #3a332c;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --radius: 0.9rem;
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+.game-root {
+  position: relative;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  background: var(--color-bg);
+}
+
+.game-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, var(--color-bg) 130%);
+  opacity: 0.4;
+}
+
+.hurt-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--color-danger);
+}
+
+.slime-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 5rem var(--color-accent);
+  opacity: 0.4;
+}
+
+.crosshair {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 1.15rem;
+  height: 1.15rem;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.crosshair i {
+  position: absolute;
+  background: var(--color-fg);
+  box-shadow: 0 0 0 1px rgb(20 18 15 / 0.55);
+}
+.crosshair i:nth-child(1) {
+  left: 0;
+  top: 0.45rem;
+  width: 0.32rem;
+  height: 2px;
+}
+.crosshair i:nth-child(2) {
+  right: 0;
+  top: 0.45rem;
+  width: 0.32rem;
+  height: 2px;
+}
+.crosshair i:nth-child(3) {
+  top: 0;
+  left: 0.45rem;
+  width: 2px;
+  height: 0.32rem;
+}
+.crosshair i:nth-child(4) {
+  bottom: 0;
+  left: 0.45rem;
+  width: 2px;
+  height: 0.32rem;
+}
+.crosshair.is-hit i {
+  background: var(--color-accent);
+}
+
+.hud-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+.minimap {
+  width: 6.5rem;
+  height: 6.5rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.near-prompt {
+  bottom: 11rem;
+}
+.key-hints {
+  display: none;
+}
+.touch-controls {
+  display: none;
+}
+
+@media (min-width: 900px) and (pointer: fine) {
+  .near-prompt {
+    bottom: 4.5rem;
+  }
+  .key-hints {
+    display: block;
+  }
+  .look-hint {
+    display: block;
+  }
+  .minimap {
+    width: 8rem;
+    height: 8rem;
+  }
+}
+
+@media (pointer: coarse), (max-width: 900px) {
+  .touch-controls {
+    display: flex;
+  }
+  .look-hint {
+    display: none;
+  }
+}
+
+.stick {
+  width: 7.25rem;
+  height: 7.25rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-surface) 78%, transparent);
+  border: 1px solid var(--color-border);
+  position: relative;
+  touch-action: none;
+}
+.stick b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+}
+
+.pad-btn {
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border: 1px solid var(--color-border);
+  display: grid;
+  place-items: center;
+}
+.pad-btn.primary {
+  width: 4.5rem;
+  height: 4.5rem;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border-color: transparent;
+}
+.pad-btn small {
+  font-size: 0.65rem;
+  font-weight: 560;
+  letter-spacing: 0.04em;
+}
+
+.pack-slot {
+  min-height: 4.5rem;
+  border-radius: 0.7rem;
+  border: 1px dashed var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  text-align: center;
+}
+.pack-slot.is-filled {
+  border-style: solid;
+  background: var(--color-surface-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hurt-veil,
+  .slime-veil {
+    transition: none;
+  }
+}
