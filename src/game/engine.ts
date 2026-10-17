@@ -207,6 +207,105 @@ export function mountGame(opts: MountOpts): GameHandle {
     return false
   }
 
+  function overlap(px: number, pz: number, rad: number) {
+    let bestPen = 0
+    let nx = 0
+    let nz = 0
+    const minX = Math.floor((px - rad) / CELL)
+    const maxX = Math.floor((px + rad) / CELL)
+    const minZ = Math.floor((pz - rad) / CELL)
+    const maxZ = Math.floor((pz + rad) / CELL)
+    for (let cz = minZ; cz <= maxZ; cz++) {
+      for (let cx = minX; cx <= maxX; cx++) {
+        if (!solid(cx, cz)) continue
+        const x0 = cx * CELL
+        const z0 = cz * CELL
+        const qx = Math.max(x0, Math.min(px, x0 + CELL))
+        const qz = Math.max(z0, Math.min(pz, z0 + CELL))
+        const dx = px - qx
+        const dz = pz - qz
+        const d2 = dx * dx + dz * dz
+        if (d2 >= rad * rad) continue
+        const d = Math.sqrt(d2)
+        let pen: number
+        let nnx: number
+        let nnz: number
+        if (d > 1e-5) {
+          pen = rad - d
+          nnx = dx / d
+          nnz = dz / d
+        } else {
+          const left = px - x0
+          const right = x0 + CELL - px
+          const back = pz - z0
+          const front = z0 + CELL - pz
+          const m = Math.min(left, right, back, front)
+          pen = rad + m
+          if (m === left) {
+            nnx = -1
+            nnz = 0
+          } else if (m === right) {
+            nnx = 1
+            nnz = 0
+          } else if (m === back) {
+            nnx = 0
+            nnz = -1
+          } else {
+            nnx = 0
+            nnz = 1
+          }
+        }
+        if (pen > bestPen) {
+          bestPen = pen
+          nx = nnx
+          nz = nnz
+        }
+      }
+    }
+    return bestPen > 0 ? { nx, nz, pen: bestPen } : null
+  }
+
+  function freeOfWalls(px: number, pz: number) {
+    let ox = px
+    let oz = pz
+    for (let i = 0; i < 4; i++) {
+      const hit = overlap(ox, oz, RADIUS)
+      if (!hit) break
+      ox += hit.nx * (hit.pen + 0.002)
+      oz += hit.nz * (hit.pen + 0.002)
+    }
+    return { x: ox, z: oz }
+  }
+
+  function stepMove(px: number, pz: number, vx0: number, vz0: number, dt: number) {
+    let dx = vx0 * dt
+    let dz = vz0 * dt
+    let ox = px
+    let oz = pz
+    let applied = false
+    for (let i = 0; i < 3; i++) {
+      if (!blocked(ox + dx, oz + dz, RADIUS)) {
+        ox += dx
+        oz += dz
+        applied = true
+        break
+      }
+      const hit = overlap(ox + dx, oz + dz, RADIUS)
+      if (!hit) break
+      const vn = dx * hit.nx + dz * hit.nz
+      if (vn >= -1e-8) break
+      dx -= vn * hit.nx
+      dz -= vn * hit.nz
+    }
+    if (!applied) {
+      dx = 0
+      dz = 0
+    }
+    const out = freeOfWalls(ox, oz)
+    const inv = dt > 0 ? 1 / dt : 0
+    return { x: out.x, z: out.z, vx: dx * inv, vz: dz * inv }
+  }
+
   function los(x0: number, z0: number, x1: number, z1: number) {
     const dist = Math.hypot(x1 - x0, z1 - z0)
     const steps = Math.max(1, Math.ceil(dist / 0.35))
@@ -1435,12 +1534,11 @@ export function mountGame(opts: MountOpts): GameHandle {
     vx += (fx * my * speed + rx * mx * speed - vx) * rate
     vz += (fz * my * speed + rz * mx * speed - vz) * rate
 
-    const nx = x + vx * dt
-    if (!blocked(nx, z, RADIUS)) x = nx
-    else vx = 0
-    const nz = z + vz * dt
-    if (!blocked(x, nz, RADIUS)) z = nz
-    else vz = 0
+    const moved = stepMove(x, z, vx, vz, dt)
+    x = moved.x
+    z = moved.z
+    vx = moved.vx
+    vz = moved.vz
 
     if (jumpEdge || jumpBuf > 0) jumpBuf = Math.max(jumpBuf, 0.12)
     jumpBuf = Math.max(0, jumpBuf - dt)
@@ -1881,7 +1979,6 @@ export function mountGame(opts: MountOpts): GameHandle {
   ])
 
   function onKeyDown(e: KeyboardEvent) {
-    if (e.repeat) return
     scripted = false
     keys.add(e.code)
     if (BLOCK.has(e.code)) e.preventDefault()
