@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Lantern Hollow">
+  <rect width="32" height="32" rx="7" fill="#14120f"/>
+  <path fill="#f6efe4" d="M5 28h22v-3.4H5zm2-3.4h18V14.6a9 9 0 0 0-18 0z"/>
+  <path fill="#14120f" d="M10.6 24.6h10.8V15.2a5.4 5.4 0 0 0-10.8 0z"/>
+  <path fill="#e3923a" d="M16 23.2c-3.6-1.5-4.6-5-2.2-8.2 1.4 2.4 2.5 2.6 2.4 4.8 1.2-1.4 1.4-3.4.7-5.2 3 2.4 3.8 5.6.9 8.6z"/>
+  <circle cx="16" cy="16.6" r="1.7" fill="#d4533c"/>
+</svg>

@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Lantern Hollow",
+      "hasCanvas": true,
+      "bodyTextLen": 466,
+      "bodyTextHash": "d6e115ae1a0f4ca2b58e678aea92bd1a8189dc7f763371be38d1b4003a8c93de",
+      "bodyTextPrefix": "0 0:00 0/16 POCKET DUNGEON Lantern Hollow A low-poly night maze.",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Lantern Hollow",
+      "hasCanvas": true,
+      "bodyTextLen": 466,
+      "bodyTextHash": "d6e115ae1a0f4ca2b58e678aea92bd1a8189dc7f763371be38d1b4003a8c93de",
+      "bodyTextPrefix": "0 0:00 0/16 POCKET DUNGEON Lantern Hollow A low-poly night maze.",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
