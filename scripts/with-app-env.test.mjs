@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -11,6 +11,7 @@ import {
   parseAppEnv,
   projectRoot,
   readAppEnv,
+  resolveInvocation,
 } from "./with-app-env.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -125,4 +126,50 @@ test("the CLI still runs when invoked through a symlinked path", async () => {
     PRINT_FLAG,
   ]);
   assert.equal(stdout, "false");
+});
+
+// --- resolveInvocation -----------------------------------------------------
+// `npm run dev` passes a bare `vite`, which on Windows is a `.cmd` batch file.
+// Node refuses to spawn one without a shell, and `shell: true` concatenates
+// args unescaped (DEP0190), so the wrapper starts the package's bin with node
+// instead. These pin that behaviour on every platform, not just the host.
+
+test("on windows a bare tool resolves to its package bin run by node", () => {
+  const root = projectRoot();
+  const got = resolveInvocation("vite", root, "win32");
+  assert.equal(got.file, process.execPath);
+  assert.equal(got.prefixArgs.length, 1);
+  assert.ok(existsSync(got.prefixArgs[0]), "resolved bin entry must exist");
+  assert.match(got.prefixArgs[0], /node_modules[\\/]vite[\\/]bin[\\/]vite\.js$/);
+});
+
+test("on windows an object bin field resolves by its own key", () => {
+  const got = resolveInvocation("eslint", projectRoot(), "win32");
+  assert.equal(got.file, process.execPath);
+  assert.match(got.prefixArgs[0], /node_modules[\\/]eslint[\\/]\.?bin[\\/]eslint\.js$/);
+});
+
+test("posix leaves the command untouched", () => {
+  const got = resolveInvocation("vite", projectRoot(), "linux");
+  assert.deepEqual(got, { file: "vite", prefixArgs: [] });
+});
+
+test("a command that already carries a path is never rewritten", () => {
+  for (const platform of ["win32", "linux"]) {
+    assert.deepEqual(resolveInvocation(process.execPath, projectRoot(), platform), {
+      file: process.execPath,
+      prefixArgs: [],
+    });
+    assert.deepEqual(resolveInvocation("node_modules/.bin/vite", projectRoot(), platform), {
+      file: "node_modules/.bin/vite",
+      prefixArgs: [],
+    });
+  }
+});
+
+test("an unknown command falls back to a plain spawn", () => {
+  assert.deepEqual(resolveInvocation("definitely-not-installed-xyz", projectRoot(), "win32"), {
+    file: "definitely-not-installed-xyz",
+    prefixArgs: [],
+  });
 });

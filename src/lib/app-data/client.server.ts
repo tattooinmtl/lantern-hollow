@@ -278,7 +278,10 @@ function tokenIdentityKey(token: string): string {
             .digest("base64url");
         }
       }
-    } catch {}
+    } catch {
+      // The JWT payload did not parse as JSON. Fall through to the raw-token
+      // hash below — a stable key is still required for the memo to work.
+    }
   }
   return createHash("sha256").update(token).digest("base64url");
 }

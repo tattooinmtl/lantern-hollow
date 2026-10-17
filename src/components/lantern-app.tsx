@@ -283,7 +283,7 @@ function LanternSession({ seed, onNew }: { seed: number; onNew: () => void }) {
       if (!current) return null
       const handle = handleRef.current
       if (!current.moved) {
-        handle?.useItem(current.index)
+        handle?.activateItem(current.index)
       } else {
         const panel = panelRef.current?.getBoundingClientRect()
         const inside =

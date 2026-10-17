@@ -15,7 +15,7 @@ export type GameHandle = {
   restart: () => void
   resume: () => void
   setInventory: (open: boolean) => void
-  useItem: (index: number) => void
+  activateItem: (index: number) => void
   moveItem: (from: number, to: number) => void
   dropItem: (index: number) => void
   toggleTorch: () => void
@@ -97,7 +97,7 @@ function noopHandle(): GameHandle {
     restart: noop,
     resume: noop,
     setInventory: noop,
-    useItem: noop,
+    activateItem: noop,
     moveItem: noop,
     dropItem: noop,
     toggleTorch: noop,
@@ -1035,6 +1035,7 @@ export function mountGame(opts: MountOpts): GameHandle {
     near = ""
     hitMarker = 0
     clock = 0
+    fullCd = 0
     stepAcc = 0
     explored.fill(0)
     reveal(x, z)
@@ -1128,7 +1129,7 @@ export function mountGame(opts: MountOpts): GameHandle {
     return slots.findIndex((s) => s == null)
   }
 
-  function useItem(index: number) {
+  function activateItem(index: number) {
     const it = slots[index]
     if (!it) return
     if (it.kind === "potion") {
@@ -1432,7 +1433,7 @@ export function mountGame(opts: MountOpts): GameHandle {
 
   function tick(dt: number, first: boolean) {
     if (first) {
-      if (useSlot >= 0 && (phase === "play" || phase === "inventory")) useItem(useSlot)
+      if (useSlot >= 0 && (phase === "play" || phase === "inventory")) activateItem(useSlot)
       useSlot = -1
       if (invEdge) {
         invEdge = false
@@ -2116,7 +2117,7 @@ export function mountGame(opts: MountOpts): GameHandle {
         push(true)
       }
     },
-    useItem,
+    activateItem,
     moveItem,
     dropItem,
     toggleTorch() {

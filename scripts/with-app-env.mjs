@@ -20,7 +20,7 @@
  * `process.env`, which is why the merge has to happen before Vite starts.
  */
 import { spawn } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { constants as osConstants } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -104,14 +104,48 @@ export function isMainModule(moduleUrl) {
   }
 }
 
+/**
+ * Work out how to start `command` on this platform.
+ *
+ * On Windows the npm shims are batch files (`vite.cmd`). Node refuses to spawn
+ * a `.cmd` without a shell — EINVAL, hardened since CVE-2024-27980 — and
+ * `shell: true` is the alternative. But that concatenates arguments without
+ * escaping them (DEP0190), which turns a build command into an injection
+ * surface and warns on every run.
+ *
+ * So read the package's own `bin` entry and start that JS file with this node.
+ * No shell, no quoting, and exit codes and signals behave the same on every
+ * platform. Anything that already carries a path is passed through untouched,
+ * which is how callers invoke `process.execPath` and how the tests drive this.
+ */
+export function resolveInvocation(command, root, platform = process.platform) {
+  const direct = { file: command, prefixArgs: [] };
+  if (platform !== "win32") return direct;
+  if (command.includes("/") || command.includes("\\")) return direct;
+  const name = command.replace(/\.(cmd|bat|exe)$/i, "");
+  try {
+    const pkg = JSON.parse(readFileSync(join(root, "node_modules", name, "package.json"), "utf8"));
+    const entry = typeof pkg.bin === "string" ? pkg.bin : pkg.bin?.[name];
+    if (typeof entry === "string") {
+      const resolved = join(root, "node_modules", name, entry);
+      if (existsSync(resolved)) return { file: process.execPath, prefixArgs: [resolved] };
+    }
+  } catch {
+    // no such package, or it is not readable — let spawn report the real failure
+  }
+  return direct;
+}
+
 function main(argv) {
   const [command, ...args] = argv;
   if (!command) {
     console.error("usage: node scripts/with-app-env.mjs <command> [args…]");
     process.exit(2);
   }
-  const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  const root = projectRoot();
+  const env = mergeAppEnv(readAppEnv(root), process.env);
+  const { file, prefixArgs } = resolveInvocation(command, root);
+  const child = spawn(file, [...prefixArgs, ...args], { stdio: "inherit", env });
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));
