@@ -278,32 +278,23 @@ export function mountGame(opts: MountOpts): GameHandle {
   }
 
   function stepMove(px: number, pz: number, vx0: number, vz0: number, dt: number) {
-    let dx = vx0 * dt
-    let dz = vz0 * dt
+    const dx = vx0 * dt
+    const dz = vz0 * dt
     let ox = px
     let oz = pz
-    let applied = false
-    for (let i = 0; i < 3; i++) {
-      if (!blocked(ox + dx, oz + dz, RADIUS)) {
-        ox += dx
-        oz += dz
-        applied = true
-        break
-      }
-      const hit = overlap(ox + dx, oz + dz, RADIUS)
-      if (!hit) break
-      const vn = dx * hit.nx + dz * hit.nz
-      if (vn >= -1e-8) break
-      dx -= vn * hit.nx
-      dz -= vn * hit.nz
+    let mvx = 0
+    let mvz = 0
+    if (!blocked(px + dx, pz, RADIUS)) {
+      ox = px + dx
+      mvx = dx
     }
-    if (!applied) {
-      dx = 0
-      dz = 0
+    if (!blocked(ox, pz + dz, RADIUS)) {
+      oz = pz + dz
+      mvz = dz
     }
     const out = freeOfWalls(ox, oz)
     const inv = dt > 0 ? 1 / dt : 0
-    return { x: out.x, z: out.z, vx: dx * inv, vz: dz * inv }
+    return { x: out.x, z: out.z, vx: mvx * inv, vz: mvz * inv }
   }
 
   function los(x0: number, z0: number, x1: number, z1: number) {
